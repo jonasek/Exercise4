@@ -1,4 +1,5 @@
-# Exercise 4: From Prototype to Production
+Exercise 4: From Prototype to Production
+========================================
 
 1. Don't overengineer.
 2. Always design properly.
@@ -8,13 +9,63 @@
 6. There is only budget/time for the first version.
 7. The prototype will become production.
 
+This exercise consists of two parts:
 
-## Network Module
+ 1. A project design hand-in, where you explain your plans for networking in the project    
+ 1. A practical milestone for the project, where you are able to send some custom data structure across a network
 
-This exercise aims to produce the "v0.1" of the network module used in your project and at the same time prepare you for the network part on the design review.
+You are not expected to have a "final" design, or to implement your design fully. Consider this as a "first draft", or "version 0.1".
+
+Part 1: Network design hand-in
+------------------------------
+
+*This part of the exercise should be handed in as a group.*
+
+Produce a reasonably-sized document with considerations on these questions, your proposed solutions, and other reflections on the networking portion of the project:
+
+ - Guarantees about elevators:
+   - What should happen if one of the nodes loses its network connection?
+   - What should happen if one of the nodes loses power for a brief moment?
+   - What should happen if some unforeseen event causes the elevator to never reach its destination, but communication remains intact?
+   
+ - Guarantees about orders:
+   - Do all your nodes need to "agree" on an order for it to be accepted? In that case, how is a faulty node handled? 
+   - How can you be sure that a remote node "agrees" on an order?
+   - How do you handle losing packets containing order information between the nodes?
+   - Do you share the entire state of the current orders, or just the changes as they occur?
+     - For either one: What should happen when an elevator re-joins after having been offline?
+
+*Pencil and paper is encouraged! Drawing a diagram/graph of the message pathways between nodes (elevators) will aid in visualizing complexity. Drawing the order of messages through time will let you more easily see what happens when communication fails.*
+     
+ - Topology:
+   - What kind of network topology do you want to  implement? Peer to peer? Master slave? Circle? Something else?
+   - In the case of a master-slave configuration: Do you have only one program, or two (a "master" executable and a "slave")?
+     - How do you handle a master node disconnecting?
+     - Is a slave becoming a master a part of the network module?
+   - In the case of a peer-to-peer configuration:
+     - Who decides the order assignment?
+     - What happens if someone presses the same button on two panels at once? Is this even a problem?
+     
+ - Technical implementation and module boundary:
+   - Protocols: TCP, UDP, or something else?
+      - If you are using TCP: How do you know who connects to who?
+        - Do you need an initialization phase to set up all the connections?
+      - If you are using UDP broadcast: How do you differentiate between messages from different nodes?
+      - If you are using a library or language feature to do the heavy lifting - what is it, and does it satisfy your needs?
+   - Do you want to build the necessary reliability into the module, or handle that at a higher level?
+   - Is detection (and handling) of things like lost messages or lost nodes a part of the network module?
+   - How will you pack and unpack (serialize) data?
+     - Do you use structs, classes, tuples, lists, ...?
+     - JSON, XML, plain strings, or just plain memcpy?
+     - Is serialization a part of the network module?
 
 
-You should start by taking a look back at [the beginning of Exercise 1](https://github.com/TTK4145/Exercise1/blob/master/Part1/README.md), and reevaluate them in the light of what you have learned about network programming (and - if applicable - concurrency control). At the same time you might want to look into what kind of libraries that already exist for your chosen language.
+Part 2: Getting networking started
+----------------------------------
+
+By the end of this exercise, you should be able to send some data structure (struct, record, etc) from one machine to another. How you achieve this (in terms of network topology, protocol, serialization) does not matter, but you should try to keep it as close to your (preliminary) design as possible.
+
+Some basic network modules already exist for several programming languages. Use whatever you find useful - extend, modify, or delete as you see fit.
 
  - [C network module](https://github.com/TTK4145/Network-c)
  - [D network module](https://github.com/TTK4145/Network-D)
@@ -22,55 +73,11 @@ You should start by taking a look back at [the beginning of Exercise 1](https://
  - [Rust network module](https://github.com/edvardsp/network-rust)
  - [Distributed Erlang](http://erlang.org/doc/reference_manual/distributed.html)
  
-By the end of this exercise, you should be able to send some data structure (struct, record, etc) from one machine to another. How you achieve this (in terms of network topology, protocol, serialization) does not matter. The key here is *abstraction*.  
-
-Don't forget that this module should *simplify* the interface between machines: Creating and handling sockets in all routines that need to communicate with the outside world is possible, but is likely to be unwieldy and unmaintainable. We want to encapsulate all the necessary functionality in a single module, so we have a single decoupled component where we can say "This module sends our data over the network". This will almost always be preferable, but above all else: *Think about what best suits your particular design*.
-
-
-### Design questions
-
-To get you started with designing a network module and/or the application that uses it, try to find answers to the questions below:
-
- - Guarantees about elevators:
-   - What should happen if one of the nodes loses network?
-   - What should happen if one of the computers loses power for a brief moment?
-   - What should happen if some unforeseen event causes the elevator to never reach its destination but communication remains intact?
- - Guarantees about orders:
-   - Do all your nodes need to "agree" on an order for it to be accepted? In that case, how is a faulty node handled? 
-   - How can you be sure that at least as many nodes as needs to agree on the order in fact agrees on the order?
-   - Do you share the entire state of the current orders , or just the changes as they occur?
-     - For either one: What should happen when an elevator re-joins after having been offline?
-
-*Pencil and paper is encouraged! Drawing a diagram/graph of the message pathways between nodes (elevators) will aid in visualizing complexity. Drawing the order of messages through time will let you more easily see what happens when communication fails.*
-     
- - Topology:
-   - What kind of network topology do you want to  implement? Peer to peer? Master slave? Circle?
-   - In the case of a master-slave configuration: Do you have only one program, or two (a "master" executable and a "slave")?
-     - Is a slave becoming a master a part of the network module?
- - Technical implementation:
-   - If you are using TCP: How do you know who connects to who?
-     - Do you need an initialization phase to set up all the connections?
-   - Will you be using blocking sockets & many threads, or nonblocking sockets and [`select()`](http://en.wikipedia.org/wiki/Select_%28Unix%29)?
-   - Do you want to build the necessary reliability into the module, or handle that at a higher level?
-   - How will you pack and unpack (serialize) data?
-     - Do you use structs, classes, tuples, lists, ...?
-     - JSON, XML, or just plain strings?
-     - Is serialization a part of the network module?
-   - Is detection (and handling) of things like lost messages or lost nodes a part of the network module?
- - Protocols:
-   - TCP gives you a data stream that is guaranteed to arrive in the same order as it was sent in (or not at all)
-   - UDP might reorder the packets you send into the network
-   - TCP will resend packets if they're dropped (at least until the socket times out)
-   - UDP may drop packets as it pleases
-   - TCP requires that you to set up a connection, so you will have to know who connects to who
-   - UDP doesn't need a connection, and even allows broadcasting
-   - (You're also allowed to use any other network library or language feature you may desire)
-   
-
+Since this is the start of programming your project, you should start using your project repository on GitHub. If you find that this exercise becomes "short", keep working on your design, free-form programming, or move on to the next exercise.
  
 ### Running from another computer
 
-In order to test a network module, you will have to run your code from multiple machines at once. The best way to do this is to log in remotely. Remember to be nice the people sitting at that computer (don't mess with their files, and so on), and try to avoid using the same ports as them.
+In order to test networking on the lab, you may find it useful to run your code from multiple machines at once. The best way to do this is to log in remotely. Remember to be nice the people sitting at that computer (don't mess with their files, and so on), and try to avoid using the same ports as them.
 
  - Logging in:
    - `ssh username@#.#.#.#` where #.#.#.# is the remote IP
@@ -80,7 +87,7 @@ In order to test a network module, you will have to run your code from multiple 
      - Copying files *to* remote: `scp -r fileOrFolderAtThisMachine username@#.#.#.#:fileOrFolderAtOtherMachine`
      - Copying files *from* remote: `scp -r username@#.#.#.#:fileOrFolderAtOtherMachine fileOrFolderAtThisMachine`
     
-*If you are scripting something to automate any part of this process, remember to **not** include the login password in any files you upload to github (or anywhere else for that matter)*
+*If you are scripting something to automate any part of this process, remember to **not** include the login password in any files you upload to GitHub (or anywhere else for that matter)*
 
 ## Extracurricular
 
